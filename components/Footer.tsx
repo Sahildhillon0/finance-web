@@ -7,7 +7,7 @@ export default function Footer() {
         {/* Logo and Title */}
         <div className="flex items-center mb-4">
           <Car className="h-8 w-8 text-orange-400 mr-2" />
-          <span className="text-2xl font-bold tracking-wide text-orange-200">Foji Finance</span>
+          <span className="text-2xl font-bold tracking-wide text-orange-200">Foji Vehicle Loan</span>
         </div>
         {/* Info Cards */}
         <div className="w-full flex flex-col md:flex-row justify-center gap-6 mb-8">
@@ -45,7 +45,7 @@ export default function Footer() {
             <span className="bg-green-500/10 text-green-300 px-4 py-1 rounded-full text-xs font-semibold">Certified Partners</span>
             <span className="bg-blue-500/10 text-blue-300 px-4 py-1 rounded-full text-xs font-semibold">Fast Approvals</span>
           </div>
-          <p className="text-xs text-gray-400">&copy; 2024 Codethics. All rights reserved.</p>
+          <p className="text-xs text-gray-400">&copy; 2025 Foji Vehicle Loan. All rights reserved.</p>
         </div>
       </div>
     </footer>

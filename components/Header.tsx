@@ -27,7 +27,7 @@ export default function Header() {
         <div className="flex justify-between items-center py-5 px-2 md:px-8">
           <div className="flex items-center">
             <Car className="h-8 w-8 text-white mr-3" />
-            <span className="text-2xl font-bold text-white tracking-wide">Foji Finance</span>
+            <span className="text-2xl font-bold text-white tracking-wide">Foji Vehicle Loan</span>
           </div>
 
           <nav className="hidden md:flex space-x-10 items-center">

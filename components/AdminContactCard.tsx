@@ -11,7 +11,7 @@ export default function AdminContactCard() {
       </div>
       <div className="flex items-center gap-2 text-lg">
         <Phone className="h-5 w-5 text-blue-300" />
-        <span className="text-white">+91 98765 43210</span>
+        <span className="text-white">+91 7404165315</span>
       </div>
       <div className="text-sm text-blue-200 mt-1">Feel free to reach out via email or phone for any assistance.</div>
     </div>
