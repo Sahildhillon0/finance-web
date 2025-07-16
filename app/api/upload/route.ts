@@ -1,51 +1,40 @@
 export const runtime = "nodejs";
 
 import { type NextRequest, NextResponse } from "next/server"
-import { writeFile } from "fs/promises"
-import { join } from "path"
-import { authenticateRequest } from "@/lib/auth"
+import { v2 as cloudinary } from "cloudinary"
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
 
 export async function POST(request: NextRequest) {
-  console.log("[UPLOAD] Incoming upload request")
-
   try {
-    const data = await request.formData()
-    console.log("[UPLOAD] Got form data", data)
-    const file = data.get("file")
-    console.log("[UPLOAD] file object:", file)
+    const data = await request.formData();
+    const file = data.get("file");
     if (!file || typeof file !== "object" || !("arrayBuffer" in file)) {
-      console.log("[UPLOAD] Invalid or missing file", file)
-      return NextResponse.json({ error: "No file uploaded or invalid file object" }, { status: 400 })
+      return NextResponse.json({ error: "No file uploaded or invalid file object" }, { status: 400 });
     }
-
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    console.log("[UPLOAD] Buffer created, size:", buffer.length)
-
-    // Use original filename if available, else fallback
-    const originalName = "name" in file ? (file as any).name : "upload"
-    const filename = `${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-    const uploadDir = join(process.cwd(), "public", "uploads");
-
-    // Ensure uploads directory exists (sync is safe here for one-off check)
-    const fs = await import("fs");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-      console.log("[UPLOAD] Created uploads directory:", uploadDir);
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const originalName = "name" in file ? (file as any).name : "upload";
+    // Upload buffer to Cloudinary
+    try {
+      const uploadResult = await new Promise<any>((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: "cars", public_id: originalName.split(".")[0] },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        ).end(buffer);
+      });
+      return NextResponse.json({ url: uploadResult.secure_url, message: "File uploaded successfully" });
+    } catch (error: any) {
+      return NextResponse.json({ error: error.message || "Failed to upload to Cloudinary" }, { status: 500 });
     }
-
-    const path = join(uploadDir, filename);
-    console.log("[UPLOAD] Saving to path:", path);
-
-    await writeFile(path, buffer);
-
-    console.log("[UPLOAD] File saved successfully");
-
-    return NextResponse.json({
-      url: `/uploads/${filename}`,
-      message: "File uploaded successfully",
-    })
   } catch (error) {
-    return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
   }
 }
