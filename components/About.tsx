@@ -1,4 +1,6 @@
 import { Shield, Clock, DollarSign, Users } from "lucide-react"
+import { motion, useInView } from "framer-motion"
+import { useRef } from "react"
 
 export default function About() {
   const features = [
@@ -24,8 +26,17 @@ export default function About() {
     },
   ]
 
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-80px' })
   return (
-    <section id="about" className="py-20 bg-background">
+    <motion.section
+      id="about"
+      ref={ref}
+      initial={{ opacity: 0, y: 80 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+      className="py-20 bg-background"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Why Choose Foji Vehicle Loan ?</h2>
@@ -61,6 +72,6 @@ export default function About() {
   })}
 </div>
       </div>
-    </section>
+    </motion.section>
   )
 }

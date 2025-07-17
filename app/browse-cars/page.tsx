@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
+import { motion } from "framer-motion"
 
 interface Car {
   _id: string
@@ -142,8 +143,18 @@ export default function BrowseCarsPage() {
         <div className="text-center py-12 text-lg text-muted-foreground">No cars found.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {filtered.map(car => (
-            <a key={car._id} href={`/browse-cars/${car._id}`} className="block focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-3xl">
+          {filtered.map((car, idx) => (
+            <motion.a
+              key={car._id}
+              href={`/browse-cars/${car._id}`}
+              className="block focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-3xl"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: idx * 0.12, ease: 'easeOut' }}
+              whileHover={{ scale: 1.03, boxShadow: '0 8px 40px 0 rgba(80,80,120,0.18)' }}
+              whileTap={{ scale: 0.97 }}
+              style={{ display: 'block' }}
+            >
               <div className="relative bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg rounded-3xl shadow-2xl p-8 flex flex-col gap-5 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 hover:shadow-[0_8px_40px_0_rgba(80,80,120,0.18)] hover:-translate-y-2 overflow-hidden group cursor-pointer">
                 <div className="relative w-full h-48 rounded-xl overflow-hidden bg-secondary dark:bg-gray-800">
                   {/* Glossy highlight overlay on hover */}
@@ -164,7 +175,7 @@ export default function BrowseCarsPage() {
                   <div className="text-xs text-muted-foreground dark:text-gray-400">Added: {new Date(car.createdAt).toLocaleDateString()}</div>
                 </div>
               </div>
-            </a>
+            </motion.a>
           ))}
         </div>
       )}

@@ -6,6 +6,7 @@ import About from "@/components/About"
 import Services from "@/components/Services"
 import Testimonials from "@/components/Testimonials"
 import Footer from "@/components/Footer"
+import SocialMediaLinks from "@/components/SocialMediaLinks"
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
       <About />
       <Services />
       <Testimonials />
+      <SocialMediaLinks />
       <Footer />
     </main>
   )
