@@ -11,7 +11,8 @@ function normalize(doc: any): Car {
     price: Number(doc.price) || 0,
     status: (doc.status || (doc.availability === "in-stock" ? "available" : "sold")) as Car["status"],
     type: (doc.type || "new") as Car["type"],
-    imageUrl: doc.imageUrl || (Array.isArray(doc.images) && doc.images.length > 0 ? doc.images[0] : "") || "",
+    availability: doc.availability || (doc.status === "available" ? "in-stock" : "sold"),
+    images: Array.isArray(doc.images) ? doc.images : (doc.imageUrl ? [doc.imageUrl] : []),
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   }
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
   const type = qp.get("type") || ""
   const minPrice = qp.get("minPrice")
   const maxPrice = qp.get("maxPrice")
-  const sort = qp.get("sort") === "oldest" ? { createdAt: 1 } : { createdAt: -1 }
+  const sort = qp.get("sort") === "oldest" ? { createdAt: 1 as const } : { createdAt: -1 as const }
   const limit = Number(qp.get("limit") || 24)
   const page = Number(qp.get("page") || 1)
   const skip = (page - 1) * limit
@@ -78,8 +79,8 @@ export async function POST(req: NextRequest) {
   // Extract image URLs if they're objects with a url property
   const imageUrls = images.map((img: any) => typeof img === 'string' ? img : img.url);
   
-  // Set the first image as the main image if available
-  const imageUrl = imageUrls[0] || body.imageUrl || '';
+  // Use the first image URL if available, otherwise default to empty string
+  const imageUrl = imageUrls[0] || '';
 
   const doc: any = {
     name,

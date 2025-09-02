@@ -37,10 +37,14 @@ function CarIcon(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-export function SiteHeader() {
+interface SiteHeaderProps extends React.HTMLAttributes<HTMLElement> {
+  className?: string;
+}
+
+export function SiteHeader({ className, ...props }: SiteHeaderProps) {
   const pathname = usePathname()
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-slate-950/70 backdrop-blur">
+    <header className={cn("sticky top-0 z-40 w-full border-b border-white/5 bg-slate-950/70 backdrop-blur", className)} {...props}>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" className="text-lg font-semibold text-white">
           Foji <span className="text-blue-400">Vehicle</span> <span className="text-amber-300">Loan</span>

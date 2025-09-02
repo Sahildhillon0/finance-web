@@ -11,12 +11,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .limit(200)
     .toArray()
 
-  return [
-    { url: `${base}/`, changeFrequency: "weekly", priority: 1 },
-    { url: `${base}/browse-cars`, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${base}/about`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${base}/services`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${base}/testimonials`, changeFrequency: "monthly", priority: 0.6 },
-    ...items.map((i) => ({ url: `${base}/cars/${i._id}`, changeFrequency: "weekly", priority: 0.8 })),
+  const staticPages: MetadataRoute.Sitemap = [
+    { url: `${base}/`, changeFrequency: "weekly" as const, priority: 1 },
+    { url: `${base}/browse-cars`, changeFrequency: "weekly" as const, priority: 0.9 },
+    { url: `${base}/about`, changeFrequency: "monthly" as const, priority: 0.6 },
+    { url: `${base}/services`, changeFrequency: "monthly" as const, priority: 0.6 },
+    { url: `${base}/testimonials`, changeFrequency: "monthly" as const, priority: 0.6 },
   ]
+
+  const dynamicPages: MetadataRoute.Sitemap = items.map((i) => ({
+    url: `${base}/cars/${i._id}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.8
+  }))
+
+  return [...staticPages, ...dynamicPages]
 }

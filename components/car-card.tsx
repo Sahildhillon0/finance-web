@@ -12,8 +12,12 @@ export function CarCard({ car, index = 0 }: { car: Car; index?: number }) {
   const [isNavigating, setIsNavigating] = useState(false)
   const router = useRouter()
 
-  const handleViewDetails = (e: React.MouseEvent, id: string) => {
+  const handleViewDetails = (e: React.MouseEvent, id?: string) => {
     e.preventDefault()
+    if (!id) {
+      console.error('Car ID is undefined')
+      return
+    }
     setIsNavigating(true)
     router.push(`/cars/${id}`)
   }
@@ -26,7 +30,7 @@ export function CarCard({ car, index = 0 }: { car: Car; index?: number }) {
     >
       <div className="relative overflow-hidden rounded-xl">
         <Image
-          src={car.imageUrl || "/placeholder.svg?height=240&width=480&query=car+photo"}
+          src={car.images[0] || "/placeholder.svg?height=240&width=480&query=car+photo"}
           alt={car.name}
           width={640}
           height={360}
@@ -46,7 +50,7 @@ export function CarCard({ car, index = 0 }: { car: Car; index?: number }) {
           <span className="text-xl font-semibold">₹{car.price.toLocaleString("en-IN")}</span>
         </div>
         <button
-          onClick={(e) => handleViewDetails(e, car._id)}
+          onClick={(e) => car._id && handleViewDetails(e, car._id)}
           disabled={isNavigating}
           className={`flex items-center justify-center gap-2 rounded-md border border-blue-500/30 bg-blue-600/20 px-3 py-1.5 text-sm text-blue-100 transition hover:bg-blue-600/30 ${isNavigating ? 'opacity-70 cursor-wait' : ''}`}
         >

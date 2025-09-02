@@ -1,31 +1,48 @@
 // lib/mongodb.ts
-import { MongoClient } from "mongodb"
+import { MongoClient, Db } from "mongodb";
 
+// Declare global variable for caching MongoClient
 declare global {
   // eslint-disable-next-line no-var
-  var __mongoClient: MongoClient | undefined
+  var __mongoClient: MongoClient | undefined;
 }
 
-const URI = process.env.MONGODB_URI
-if (!URI) {
-  throw new Error("Missing MONGODB_URI. Add it in Project Settings.")
+// Validate environment variables at module load time
+const MONGODB_URI = process.env.MONGODB_URI ?? throwMissingEnv("MONGODB_URI");
+const MONGODB_DB = process.env.MONGODB_DB ?? "carfinance";
+
+// Helper function to throw an error for missing environment variables
+function throwMissingEnv(varName: string): never {
+  throw new Error(`Missing ${varName}. Please set it in your environment variables.`);
 }
 
-export async function getMongoClient() {
+/**
+ * Get the MongoClient instance, reusing the cached connection if available.
+ * @returns {Promise<MongoClient>} The MongoClient instance
+ */
+export async function getMongoClient(): Promise<MongoClient> {
   if (!global.__mongoClient) {
-    global.__mongoClient = new MongoClient(URI)
-    await global.__mongoClient.connect()
+    global.__mongoClient = new MongoClient(MONGODB_URI);
+    await global.__mongoClient.connect();
   }
-  return global.__mongoClient
+  return global.__mongoClient;
 }
 
-export async function getDb() {
-  const client = await getMongoClient()
-  return client.db(process.env.MONGODB_DB || "carfinance")
+/**
+ * Get the MongoDB database instance.
+ * @returns {Promise<Db>} The MongoDB database instance
+ */
+export async function getDb(): Promise<Db> {
+  const client = await getMongoClient();
+  return client.db(MONGODB_DB);
 }
 
-export async function connectToDatabase() {
-  const client = await getMongoClient()
-  const db = client.db(process.env.MONGODB_DB || "carfinance")
-  return { client, db }
+/**
+ * Connect to the database and return both the client and database instances.
+ * @returns {Promise<{ client: MongoClient; db: Db }>} The MongoClient and database instances
+ */
+export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
+  const client = await getMongoClient();
+  const db = client.db(MONGODB_DB);
+  return { client, db };
 }
