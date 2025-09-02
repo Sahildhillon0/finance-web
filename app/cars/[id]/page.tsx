@@ -165,7 +165,7 @@ export default async function CarDetailsPage({ params }: { params: Promise<{ id:
             <p className="text-sm text-slate-400">Starting Price</p>
             <div className="text-3xl font-bold text-blue-300">₹{car.price.toLocaleString("en-IN")}</div>
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <a className="rounded-md bg-blue-600 px-4 py-2 text-center text-white hover:bg-blue-500" href="#quote">
+              <a className="rounded-md bg-blue-600 px-4 py-2 text-center text-white hover:bg-blue-500" href="/loan-quote">
                 Get Loan Quote
               </a>
               <a
@@ -179,7 +179,7 @@ export default async function CarDetailsPage({ params }: { params: Promise<{ id:
           <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-5">
             <h3 className="mb-2 text-lg font-semibold text-white">Contact Our Team</h3>
             <ul className="space-y-1 text-sm text-slate-300">
-              <li>Call: (555) 123-4567</li>
+              <li>Call: +91 98177 65315</li>
               <li>Email: info@autoloanpro.com</li>
             </ul>
           </div>

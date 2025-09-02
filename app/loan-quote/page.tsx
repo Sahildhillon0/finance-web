@@ -52,17 +52,17 @@ export default function LoanQuotePage() {
                 
                 <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-6">
                   <a 
-                    href="tel:+919876543210" 
+                    href="tel:+919817765315" 
                     className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition-colors"
                   >
                     <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    +91 98765 43210
+                    +91 98177 65315
                   </a>
                   
                   <a 
-                    href="https://wa.me/919876543210" 
+                    href="https://wa.me/919817765315" 
                     className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg transition-colors"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -92,7 +92,7 @@ export default function LoanQuotePage() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-sm font-medium text-slate-400">Our Location</h3>
-                    <p className="mt-1 text-white">123 Finance Street, Mumbai, Maharashtra 400001</p>
+                    <p className="mt-1 text-white">Mahendergarh Chowk, Charkhi Dadri, Near Patrol Pump, Mahendergarh Road, Ch. Dadri - 127306</p>
                   </div>
                 </div>
 
@@ -104,8 +104,8 @@ export default function LoanQuotePage() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-sm font-medium text-slate-400">Phone Number</h3>
-                    <p className="mt-1 text-white">+91 98765 43210</p>
-                    <p className="mt-1 text-white">+91 12345 67890</p>
+                    <p className="mt-1 text-white">+91 98177 65315</p>
+                    <p className="mt-1 text-white">+91 98177 65315</p>
                   </div>
                 </div>
               </div>

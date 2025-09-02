@@ -27,7 +27,7 @@ export function ContactBand() {
             <Phone className="h-5 w-5" aria-hidden />
             <span className="font-semibold">Phone</span>
           </div>
-          <p className="text-sm text-slate-300">+91 7404165315</p>
+          <p className="text-sm text-slate-300">+91 98177 65315</p>
           <p className="text-xs text-slate-400">24/7 Support Available</p>
         </div>
         <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-5">

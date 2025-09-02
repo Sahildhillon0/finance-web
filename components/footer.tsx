@@ -7,8 +7,8 @@ export function SiteFooter() {
         <div>
           <h3 className="mb-2 text-lg font-semibold text-white">Contact</h3>
           <ul className="space-y-1 text-sm text-slate-300">
-            <li>Location: 123 Auto Street, Mumbai</li>
-            <li>Phone: +91 98765 43210</li>
+            <li>Mahendergarh Chowk, Charkhi Dadri, Near Patrol Pump, Mahendergarh Road, Ch. Dadri - 127306</li>
+            <li>Phone: +91 98177 65315</li>
             <li>Email: info@autoloanpro.com</li>
           </ul>
         </div>
