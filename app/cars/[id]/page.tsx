@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Phone, MessageCircle } from "lucide-react"
+import { api } from "@/lib/api"
 
 type Car = {
   id: string
@@ -18,59 +19,24 @@ type Car = {
   condition?: string
 }
 
-function getBaseUrl() {
-  if (typeof window !== 'undefined') return '' // browser should use relative url
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}` // SSR should use vercel url
-  return `http://localhost:${process.env.PORT ?? 3000}` // dev SSR should use localhost
-}
+import { getApiBaseUrl } from "@/lib/config"
 
 async function getCar(id: string): Promise<Car | undefined> {
   try {
-    const baseUrl = getBaseUrl()
-    
     // First try the specific car endpoint
-    const apiUrl = `${baseUrl}/api/cars/${id}`
-    console.log('Fetching car from:', apiUrl)
+    console.log('Fetching car with ID:', id)
     
-    const res = await fetch(apiUrl, {
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    console.log('Response status:', res.status)
-    
-    if (res.ok) {
-      const car = await res.json()
+    try {
+      const car = await api.get<Car>(`/api/cars/${id}`, { cache: 'no-store' })
       console.log('Found car:', car)
       return car
+    } catch (error) {
+      console.log('Car not found by ID, trying to fetch all cars...', error)
+      
+      // If not found, try to get all cars and filter
+      const { cars } = await api.get<{ cars: Car[] }>('/api/cars', { cache: 'no-store' })
+      return cars.find(car => car.id === id)
     }
-    
-    // If not found, try to get all cars and filter
-    console.log('Car not found by ID, trying to fetch all cars...')
-    const allCarsRes = await fetch(`${baseUrl}/api/cars`, {
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (!allCarsRes.ok) {
-      console.error('Failed to fetch all cars:', allCarsRes.status, allCarsRes.statusText)
-      return undefined
-    }
-    
-    const data = await allCarsRes.json()
-    const car = data.cars?.find((c: Car) => c.id === id)
-    
-    if (!car) {
-      console.log('Car not found in the list of all cars')
-      return undefined
-    }
-    
-    console.log('Found car in all cars list:', car)
-    return car
   } catch (error) {
     console.error('Error fetching car:', error)
     return undefined

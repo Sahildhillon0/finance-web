@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -10,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { api } from "@/lib/api"
 
 type Car = {
   id: string
@@ -69,27 +69,32 @@ export function LoanApplyDialog({ car }: { car?: Car }) {
     const fd = new FormData(e.currentTarget)
     const name = String(fd.get("name") || "")
     const mobile = String(fd.get("mobile") || "")
+    
     try {
-      const res = await fetch("/api/loan-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          name, 
-          mobile, 
-          state: stateVal,
-          carId: car?.id,
-          carTitle: car?.title || 'Not specified',
-          carMake: car?.make || 'Not specified',
-          carModel: car?.model || 'Not specified',
-          carYear: car?.year || new Date().getFullYear(),
-          carPrice: car?.price || 0
-        }),
+      await api.post("/api/loan-requests", { 
+        name, 
+        mobile, 
+        state: stateVal,
+        carId: car?.id,
+        carTitle: car?.title || 'Not specified',
+        carMake: car?.make || 'Not specified',
+        carModel: car?.model || 'Not specified',
+        carYear: car?.year || new Date().getFullYear(),
+        carPrice: car?.price || 0
       })
-      if (!res.ok) throw new Error("Request failed")
-      toast({ title: "Thanks!", description: "We received your request. Our team will contact you shortly." })
+      
+      toast({ 
+        title: "Thanks!", 
+        description: "We received your request. Our team will contact you shortly." 
+      })
       setOpen(false)
-    } catch {
-      toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" })
+    } catch (error) {
+      console.error('Loan request failed:', error)
+      toast({ 
+        title: "Something went wrong", 
+        description: error instanceof Error ? error.message : "Please try again.", 
+        variant: "destructive" 
+      })
     }
   }
 
