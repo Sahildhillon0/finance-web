@@ -1,28 +1,29 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
+/* brand theme updated to CarDekho-inspired palette: orange primary, charcoal foreground, soft background, subtle borders */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.23 0.02 270); /* charcoal */
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.72 0.17 45); /* energetic orange */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.96 0.01 270); /* light gray */
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.96 0.005 270);
+  --muted-foreground: oklch(0.45 0.02 270);
+  --accent: oklch(0.92 0.02 270); /* subtle neutral accent */
+  --accent-foreground: var(--foreground);
+  --destructive: oklch(0.64 0.22 27); /* red for errors */
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.9 0.01 270);
+  --input: var(--border);
+  --ring: oklch(0.75 0.03 270);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -38,27 +39,26 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
-
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --background: oklch(0.18 0.01 270);
+  --foreground: oklch(0.98 0 0);
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.72 0.17 45);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.28 0.02 270);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.28 0.015 270);
+  --muted-foreground: oklch(0.7 0.02 270);
+  --accent: oklch(0.25 0.02 270);
+  --accent-foreground: var(--foreground);
+  --destructive: oklch(0.45 0.15 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.28 0.02 270);
+  --input: var(--border);
+  --ring: oklch(0.42 0.03 270);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);

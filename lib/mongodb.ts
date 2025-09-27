@@ -1,48 +1,22 @@
-// lib/mongodb.ts
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, type Db } from "mongodb"
 
-// Declare global variable for caching MongoClient
-declare global {
-  // eslint-disable-next-line no-var
-  var __mongoClient: MongoClient | undefined;
-}
+let cachedDb: Db | null = null
+let cachedClient: MongoClient | null = null
 
-// Validate environment variables at module load time
-const MONGODB_URI = process.env.MONGODB_URI ?? throwMissingEnv("MONGODB_URI");
-const MONGODB_DB = process.env.MONGODB_DB ?? "carfinance";
-
-// Helper function to throw an error for missing environment variables
-function throwMissingEnv(varName: string): never {
-  throw new Error(`Missing ${varName}. Please set it in your environment variables.`);
-}
-
-/**
- * Get the MongoClient instance, reusing the cached connection if available.
- * @returns {Promise<MongoClient>} The MongoClient instance
- */
-export async function getMongoClient(): Promise<MongoClient> {
-  if (!global.__mongoClient) {
-    global.__mongoClient = new MongoClient(MONGODB_URI);
-    await global.__mongoClient.connect();
-  }
-  return global.__mongoClient;
-}
-
-/**
- * Get the MongoDB database instance.
- * @returns {Promise<Db>} The MongoDB database instance
- */
 export async function getDb(): Promise<Db> {
-  const client = await getMongoClient();
-  return client.db(MONGODB_DB);
-}
+  const uri = process.env.MONGODB_URI
+  const dbName = process.env.MONGODB_DB_NAME
+  if (!uri || !dbName) {
+    throw new Error("Missing MONGODB_URI or MONGODB_DB_NAME environment variables")
+  }
 
-/**
- * Connect to the database and return both the client and database instances.
- * @returns {Promise<{ client: MongoClient; db: Db }>} The MongoClient and database instances
- */
-export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
-  const client = await getMongoClient();
-  const db = client.db(MONGODB_DB);
-  return { client, db };
+  if (cachedDb) return cachedDb
+
+  if (!cachedClient) {
+    cachedClient = new MongoClient(uri)
+  }
+  // Reuse connection across hot reloads / server instances
+  await cachedClient.connect()
+  cachedDb = cachedClient.db(dbName)
+  return cachedDb
 }

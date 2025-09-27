@@ -1,192 +1,193 @@
-// app/cars/[id]/page.tsx
-import { SiteHeader } from "@/components/site-header"
-import { SiteFooter } from "@/components/footer"
-import { StatusBadge } from "@/components/status-badge"
-import { CarImages } from "@/components/car/CarImages"
-import { getDb } from "@/lib/mongodb"
-import { ObjectId } from "mongodb"
+import { notFound } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Phone, MessageCircle } from "lucide-react"
 
-// Helper function to get all image URLs from image data
-function getAllImageUrls(images: any[]): string[] {
-  if (!images) return [];
-  
-  // If images is a string (legacy format), wrap it in an array
-  if (typeof images === 'string') {
-    return [images];
-  }
-  
-  // If it's an array, process each item
-  if (Array.isArray(images)) {
-    return images
-      .map(img => {
-        if (!img) return '';
-        // Handle both string and object formats
-        if (typeof img === 'string') return img;
-        return img.url || '';
-      })
-      .filter(Boolean);
-  }
-  
-  return [];
+type Car = {
+  id: string
+  title: string
+  make: string
+  model: string
+  year: number
+  price: number
+  km: number
+  fuel: string
+  transmission: string
+  location: string
+  images?: string[]
+  condition?: string
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const db = await getDb()
-  let car: any = null
+function getBaseUrl() {
+  if (typeof window !== 'undefined') return '' // browser should use relative url
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}` // SSR should use vercel url
+  return `http://localhost:${process.env.PORT ?? 3000}` // dev SSR should use localhost
+}
+
+async function getCar(id: string): Promise<Car | undefined> {
   try {
-    car = await db.collection("cars").findOne({ _id: new ObjectId(id) })
-  } catch {}
-  return {
-    title: car ? `${car.name} | Foji Vehicle Loan` : "Car Details | Foji Vehicle Loan",
-    description: car?.description || "Explore car details, availability, and pricing.",
-    openGraph: {
-      title: car?.name,
-      description: car?.description,
-      images: car?.imageUrl ? [car.imageUrl] : [],
-    },
-  }
-}
-
-async function getCar(id: string) {
-  const db = await getDb()
-  return db.collection("cars").findOne({ _id: new ObjectId(id) })
-}
-
-export default async function CarDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const car: any = await getCar(id)
-  if (!car) {
-    return (
-      <div className="min-h-dvh bg-slate-950 text-slate-200">
-        <SiteHeader />
-        <main className="mx-auto max-w-6xl px-4 py-16">
-          <p>Car not found.</p>
-        </main>
-        <SiteFooter />
-      </div>
-    )
-  }
-
-  // Log the car data for debugging
-  console.log('Car data:', JSON.stringify({
-    _id: car._id,
-    name: car.name,
-    imageUrl: car.imageUrl,
-    images: car.images,
-  }, null, 2));
-
-  // Get all image URLs
-  let imageUrls = getAllImageUrls(car.images || []);
-  
-  // Add car.imageUrl if it exists and isn't already in the array
-  if (car.imageUrl && !imageUrls.includes(car.imageUrl)) {
-    imageUrls.unshift(car.imageUrl);
-  }
-  
-  // Ensure all URLs are absolute (add https: if missing) and clean them up
-  imageUrls = imageUrls.map(url => {
-    if (!url) return '';
+    const baseUrl = getBaseUrl()
     
-    // If it's already a full URL, return as is
-    if (url.startsWith('http')) return url;
+    // First try the specific car endpoint
+    const apiUrl = `${baseUrl}/api/cars/${id}`
+    console.log('Fetching car from:', apiUrl)
     
-    // If it's a protocol-relative URL, add https:
-    if (url.startsWith('//')) return `https:${url}`;
+    const res = await fetch(apiUrl, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
     
-    // If it's a path starting with /, prepend Cloudinary domain
-    if (url.startsWith('/')) return `https://res.cloudinary.com${url}`;
+    console.log('Response status:', res.status)
     
-    // If it's a Cloudinary public ID, format it properly
-    if (url.includes('cloudinary')) {
-      // Extract the public ID from the URL if it's malformed
-      const publicIdMatch = url.match(/upload\/([^\/]+)/);
-      if (publicIdMatch) {
-        return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dftylctbi'}/image/upload/${publicIdMatch[1]}`;
-      }
-      return url;
+    if (res.ok) {
+      const car = await res.json()
+      console.log('Found car:', car)
+      return car
     }
     
-    return url;
-  }).filter(Boolean);
-  
-  // Remove any duplicate URLs
-  imageUrls = [...new Set(imageUrls)];
-  
-  // If no images, use a placeholder
-  if (imageUrls.length === 0) {
-    imageUrls = ['/placeholder.svg?height=480&width=800&query=car+photo'];
+    // If not found, try to get all cars and filter
+    console.log('Car not found by ID, trying to fetch all cars...')
+    const allCarsRes = await fetch(`${baseUrl}/api/cars`, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (!allCarsRes.ok) {
+      console.error('Failed to fetch all cars:', allCarsRes.status, allCarsRes.statusText)
+      return undefined
+    }
+    
+    const data = await allCarsRes.json()
+    const car = data.cars?.find((c: Car) => c.id === id)
+    
+    if (!car) {
+      console.log('Car not found in the list of all cars')
+      return undefined
+    }
+    
+    console.log('Found car in all cars list:', car)
+    return car
+  } catch (error) {
+    console.error('Error fetching car:', error)
+    return undefined
   }
-  
-  console.log('Processed image URLs:', {
-    original: car.images,
-    processed: imageUrls,
-    hasImageUrl: !!car.imageUrl,
-    finalCount: imageUrls.length
-  });
+}
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Vehicle",
-    name: car.name,
-    image: imageUrls[0] || "/placeholder.svg?height=480&width=800&query=car+photo",
-    description: car.description,
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "INR",
-      price: car.price,
-      availability: car.status === "available" ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
-    },
-    datePosted: car.createdAt ? new Date(car.createdAt).toISOString() : undefined,
-  }
+export default async function CarDetailsPage({ params }: { params: { id: string } }) {
+  const car = await getCar(params.id)
+  if (!car) return notFound()
+
+  const images = car.images && car.images.length > 0 ? car.images : ["/classic-red-convertible.png"]
 
   return (
-    <div className="min-h-dvh bg-slate-950 text-slate-200">
-      <SiteHeader />
-      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 md:grid-cols-5">
-        <div className="md:col-span-3">
-          <CarImages 
-            images={imageUrls}
-            name={car.name}
-            type={car.type}
+    <main className="container mx-auto px-4 py-8 grid gap-6 lg:grid-cols-3">
+      <section className="lg:col-span-2">
+        <div className="rounded-xl overflow-hidden border bg-card">
+          <img 
+            src={images[0] || "/placeholder.svg"} 
+            alt={`${car.make} ${car.model}`} 
+            className="w-full h-auto" 
           />
         </div>
-        <div className="space-y-4 md:col-span-2">
-          <h1 className="text-4xl font-extrabold text-white">{car.name}</h1>
-          <StatusBadge status={car.status} />
-          <div>
-            <h3 className="mt-3 text-lg font-semibold text-white">Description</h3>
-            <p className="text-slate-300">{car.description}</p>
-            <p className="mt-2 text-sm text-slate-400">
-              Added on {car.createdAt ? new Date(car.createdAt).toLocaleDateString() : ""}
-            </p>
+        
+        {images.length > 1 && (
+          <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {images.slice(1, 7).map((src: string, i: number) => (
+              <img
+                key={i}
+                src={src || "/placeholder.svg"}
+                alt={`${car.make} ${car.model} thumbnail ${i + 2}`}
+                className="h-24 w-full object-cover rounded border"
+              />
+            ))}
           </div>
-          <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-5">
-            <p className="text-sm text-slate-400">Starting Price</p>
-            <div className="text-3xl font-bold text-blue-300">₹{car.price.toLocaleString("en-IN")}</div>
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <a className="rounded-md bg-blue-600 px-4 py-2 text-center text-white hover:bg-blue-500" href="/loan-quote">
-                Get Loan Quote
-              </a>
-              <a
-                className="rounded-md border border-blue-500/40 px-4 py-2 text-center text-blue-200 hover:bg-blue-600/10"
-                href="#test-drive"
-              >
-                Schedule Test Drive
-              </a>
+        )}
+
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-2xl">{car.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+            <div>
+              <span className="text-muted-foreground">Price</span>
+              <div className="font-semibold">₹{car.price?.toLocaleString("en-IN") || 'N/A'}</div>
             </div>
-          </div>
-          <div className="rounded-2xl border border-white/5 bg-slate-900/60 p-5">
-            <h3 className="mb-2 text-lg font-semibold text-white">Contact Our Team</h3>
-            <ul className="space-y-1 text-sm text-slate-300">
-              <li>Call: +91 98177 65315</li>
-              <li>Email: info@autoloanpro.com</li>
-            </ul>
-          </div>
-        </div>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      </main>
-      <SiteFooter />
-    </div>
+            <div>
+              <span className="text-muted-foreground">Year</span>
+              <div className="font-semibold">{car.year || 'N/A'}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Fuel</span>
+              <div className="font-semibold">{car.fuel || 'N/A'}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">KMs</span>
+              <div className="font-semibold">{car.km?.toLocaleString() || 'N/A'}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Transmission</span>
+              <div className="font-semibold">{car.transmission || 'N/A'}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Location</span>
+              <div className="font-semibold">{car.location || 'N/A'}</div>
+            </div>
+            {car.condition && (
+              <div>
+                <span className="text-muted-foreground">Condition</span>
+                <div className="font-semibold">{car.condition}</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <aside className="lg:col-span-1">
+        <Card className="sticky top-4">
+          <CardHeader>
+            <CardTitle>Loan Specialist</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">Jiternder Singh</h3>
+                <p className="text-muted-foreground">Senior Loan Specialist</p>
+              </div>
+              
+              <p className="text-sm">
+                With over 10 years of experience in vehicle financing, I specialize in helping clients find the perfect loan solutions tailored to their needs. My goal is to make your car buying experience smooth and stress-free.
+              </p>
+              
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <a href="tel:+919817765315" className="font-medium hover:text-primary">
+                    +91 98177 65315
+                  </a>
+                </div>
+                
+                <a 
+                  href="https://wa.me/919817765315" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </a>
+                
+                <p className="text-xs text-muted-foreground text-center">
+                  Fast approvals and flexible EMIs available
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </aside>
+    </main>
   )
 }

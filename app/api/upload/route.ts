@@ -1,98 +1,56 @@
-import { v2 as cloudinary } from 'cloudinary';
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server"
+import { v2 as cloudinary } from "cloudinary"
 
-// Initialize Cloudinary with environment variables
-const cloudinaryConfig = {
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-};
-
-// Verify all required environment variables are set
-const missingConfig = Object.entries({
-  cloud_name: cloudinaryConfig.cloud_name,
-  api_key: cloudinaryConfig.api_key,
-  api_secret: cloudinaryConfig.api_secret
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
 })
-.filter(([_, value]) => !value)
-.map(([key]) => key);
 
-if (missingConfig.length > 0) {
-  console.error('Missing Cloudinary configuration:', missingConfig.join(', '));
-}
-
-// Configure Cloudinary
-cloudinary.config(cloudinaryConfig);
-
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    // Check for missing configuration
-    if (missingConfig.length > 0) {
-      return NextResponse.json(
-        { 
-          error: 'Server configuration error',
-          details: `Missing Cloudinary configuration: ${missingConfig.join(', ')}`
-        },
-        { status: 500 }
-      );
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return NextResponse.json({ error: "Cloudinary is not configured" }, { status: 500 })
     }
 
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
+    const form = await req.formData()
+    // Accept both "files" and "images" field names to be robust
+    const candidates = [...form.getAll("files"), ...form.getAll("images")]
+    const files = candidates.filter((f): f is File => f instanceof File)
+
+    // [v0] debug logs
+    console.log("[v0] upload route: candidates=", candidates.length, " files=", files.length)
+
+    if (!files || files.length === 0) {
+      return NextResponse.json({ error: "No files uploaded" }, { status: 400 })
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'File too large. Maximum size is 10MB' },
-        { status: 400 }
-      );
-    }
+    const uploads = await Promise.all(
+      files.map(
+        (file) =>
+          new Promise<string>(async (resolve, reject) => {
+            try {
+              const buffer = Buffer.from(await file.arrayBuffer())
+              const stream = cloudinary.uploader.upload_stream(
+                { folder: "cars", resource_type: "image" },
+                (err, result) => {
+                  if (err || !result) return reject(err || new Error("Upload failed"))
+                  resolve(result.secure_url)
+                },
+              )
+              stream.end(buffer)
+            } catch (e) {
+              reject(e)
+            }
+          }),
+      ),
+    )
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Data = `data:${file.type};base64,${buffer.toString('base64')}`;
+    // [v0] debug logs
+    console.log("[v0] upload route: uploaded urls count=", uploads.length)
 
-    console.log('Uploading file to Cloudinary...');
-    const result = await cloudinary.uploader.upload(base64Data, {
-      folder: 'vehicle-loans',
-      resource_type: 'auto',
-    });
-
-    if (!result.secure_url) {
-      throw new Error('No URL returned from Cloudinary');
-    }
-
-    return NextResponse.json({ 
-      url: result.secure_url,
-      public_id: result.public_id
-    });
-    
-  } catch (error) {
-    console.error('Upload failed:', error);
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : 'Unknown error during file upload';
-      
-    return NextResponse.json(
-      { 
-        error: 'Upload failed',
-        details: errorMessage,
-        config: {
-          cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ? 'set' : 'missing',
-          api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY ? 'set' : 'missing',
-          api_secret: process.env.CLOUDINARY_API_SECRET ? 'set' : 'missing'
-        }
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ urls: uploads })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || "Upload failed" }, { status: 500 })
   }
 }

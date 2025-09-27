@@ -3,94 +3,181 @@
 import type React from "react"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { useState } from "react"
+import { Heart, MapPin, SearchIcon, ChevronDown, Globe } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-const nav = [
-  { href: "/", label: "Home" },
-  { href: "/browse-cars", label: "Browse Cars" },
-  { href: "/about", label: "About" },
-  { href: "/services", label: "Services" },
-  { href: "/testimonials", label: "Testimonials" },
-  { href: "/admin", label: "Admin" },
-]
+export function SiteHeader() {
+  const router = useRouter()
+  const [q, setQ] = useState("")
 
-function StarIcon(props: React.SVGProps<SVGSVGElement>) {
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    router.push(`/listings?${params.toString()}`)
+  }
+
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden {...props}>
-      <path
-        fill="currentColor"
-        d="M12 17.3l-6.18 3.73 1.64-7.03L2 9.24l7.19-.62L12 2l2.81 6.62 7.19.62-5.46 4.76 1.64 7.03z"
-      />
-    </svg>
-  )
-}
-function CarIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden {...props}>
-      <path
-        fill="currentColor"
-        d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11v6a1 1 0 0 1-1 1h-1a2 2 0 0 1-4 0H11a2 2 0 0 1-4 0H6a1 1 0 0 1-1-1v-6zm2.1-1h9.8l-.9-2.8a1 1 0 0 0-1-.7H9a1 1 0 0 0-1 .7L7.1 10zM7 14a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"
-      />
-    </svg>
-  )
-}
-
-interface SiteHeaderProps extends React.HTMLAttributes<HTMLElement> {
-  className?: string;
-}
-
-export function SiteHeader({ className, ...props }: SiteHeaderProps) {
-  const pathname = usePathname()
-  return (
-    <header className={cn("sticky top-0 z-40 w-full border-b border-white/5 bg-slate-950/70 backdrop-blur", className)} {...props}>
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="text-lg font-semibold text-white">
-          Foji <span className="text-blue-400">Vehicle</span> <span className="text-amber-300">Loan</span>
+    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur">
+      {/* Top row: logo, pill search, actions */}
+      <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+        {/* Logo */}
+        <Link href="/" className="flex items-center">
+          <span className="text-xl font-bold">Foji Vehicle Loan</span>
         </Link>
-        <nav className="hidden items-center gap-2 md:flex">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white",
-                pathname === item.href && "bg-blue-600/10 text-white ring-1 ring-blue-500/30",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all duration-200">
-          <Link href="/loan-quote">Get Loan Quote</Link>
-        </Button>
+
+        {/* Pill Search (desktop) */}
+        <form
+          onSubmit={onSubmit}
+          className="ml-2 hidden md:flex items-center flex-1 max-w-[720px]"
+          aria-label="Site search"
+        >
+          <div className="flex w-full items-center rounded-full border bg-background shadow-xs overflow-hidden">
+            <Select defaultValue="all" name="category">
+              <SelectTrigger className="rounded-full h-10 w-[110px] border-0 pl-4 pr-2">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="used">Used</SelectItem>
+              </SelectContent>
+            </Select>
+            <Separator orientation="vertical" className="h-6" />
+            <SearchIcon className="ml-3 size-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search or Ask a Question"
+              className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none h-10"
+            />
+          </div>
+        </form>
+
+        {/* Actions (desktop) */}
+        <div className="ml-auto hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+          {/* Language */}
+          <div className="flex items-center">
+            <Globe className="mr-1 size-4" aria-hidden="true" />
+            <Select defaultValue="en">
+              <SelectTrigger className="h-8 w-[100px]">
+                <SelectValue placeholder="English" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="hi">हिंदी</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Wishlist */}
+          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Wishlist">
+            <Heart className="size-5" />
+          </Button>
+
+          {/* Login / Register */}
+          <Link href="#" className="hover:text-foreground">
+            Login / Register
+          </Link>
+        </div>
       </div>
 
-      <div className="mx-auto hidden max-w-6xl grid-cols-2 gap-4 px-4 pb-3 md:grid">
-        <Link
-          href="/old-cars"
-          className="flex items-center gap-3 rounded-2xl border border-white/5 bg-slate-900/50 px-5 py-4 text-white ring-1 ring-white/5 transition hover:bg-white/5"
-          aria-label="Browse Classic Cars"
-        >
-          <StarIcon className="text-slate-300" />
-          <div className="flex flex-col">
-            <span className="text-base font-semibold">Old Cars</span>
-            <span className="text-xs text-slate-400">Vintage & Collector Vehicles</span>
+      {/* Menu row: primary categories + city selector */}
+      <div className="border-t bg-background/80">
+        <div className="container mx-auto px-4 h-11 flex items-center justify-between">
+          {/* replace plain nav links with dropdowns and swap 'Videos' for a 'Loan' button linking to /loan */}
+          <nav className="flex items-center gap-6 text-sm">
+            {/* New Cars dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
+                  <span className="uppercase tracking-wide">New Cars</span>
+                  <ChevronDown className="size-4" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=maruti-suzuki" className="w-full">Maruti Suzuki</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=hyundai" className="w-full">Hyundai</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=tata" className="w-full">Tata</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=mahindra" className="w-full">Mahindra</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=kia" className="w-full">Kia</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=toyota" className="w-full">Toyota</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=honda" className="w-full">Honda</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=volkswagen" className="w-full">Volkswagen</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=mg" className="w-full">MG</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/loan?brand=renault" className="w-full">Renault</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Used Cars dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
+                  <span className="uppercase tracking-wide">Used Cars</span>
+                  <ChevronDown className="size-4" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/listings?used=1">Buy Car</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/sell">Sell Car</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* News & Reviews dropdown */}
+
+            {/* Loan button instead of Videos */}
+            <Link href="/loan" className="ml-1">
+              <Button size="sm" className="h-8 px-3 rounded-full">
+                Loan
+              </Button>
+            </Link>
+          </nav>
+
+          {/* City selector */}
+          <div className="hidden md:flex items-center gap-2">
+            <MapPin className="size-4 text-muted-foreground" aria-hidden="true" />
+            <Select defaultValue="delhi">
+              <SelectTrigger className="h-8 w-[140px]">
+                <SelectValue placeholder="Select City" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="delhi">New Delhi</SelectItem>
+                <SelectItem value="mumbai">Mumbai</SelectItem>
+                <SelectItem value="bangalore">Bengaluru</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </Link>
-        <Link
-          href="/new-cars"
-          className="flex items-center gap-3 rounded-2xl border border-white/5 bg-slate-900/50 px-5 py-4 text-white ring-1 ring-white/5 transition hover:bg-white/5"
-          aria-label="Browse New Cars"
-        >
-          <CarIcon className="text-slate-300" />
-          <div className="flex flex-col">
-            <span className="text-base font-semibold">New Cars</span>
-            <span className="text-xs text-slate-400">Latest Models & Technology</span>
-          </div>
-        </Link>
+        </div>
       </div>
     </header>
   )

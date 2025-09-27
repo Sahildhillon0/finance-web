@@ -1,13 +1,9 @@
-import { redirect } from "next/navigation"
-import { getAdminSession } from "@/lib/auth"
-import AdminPageClient from "./AdminPageClient"
+import { AdminDashboard } from "@/components/admin-dashboard"
 
-export const metadata = { title: "Admin Dashboard | Foji Vehicle Loan" }
-
-export default async function AdminPage() {
-  const session = await getAdminSession()
-  if (!session) {
-    redirect("/admin/login")
-  }
-  return <AdminPageClient />
+export default function AdminPage() {
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <AdminDashboard />
+    </main>
+  )
 }

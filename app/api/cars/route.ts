@@ -1,105 +1,134 @@
-// app/api/cars/route.ts
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
-import type { Car } from "@/types/car"
+import type { CarRecord } from "@/data/cars"
 
-function normalize(doc: any): Car {
-  return {
-    _id: String(doc._id),
-    name: doc.name,
-    description: doc.description,
-    price: Number(doc.price) || 0,
-    status: (doc.status || (doc.availability === "in-stock" ? "available" : "sold")) as Car["status"],
-    type: (doc.type || "new") as Car["type"],
-    availability: doc.availability || (doc.status === "available" ? "in-stock" : "sold"),
-    images: Array.isArray(doc.images) ? doc.images : (doc.imageUrl ? [doc.imageUrl] : []),
-    createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
-  }
+type CarDoc = {
+  _id?: any
+  id: string
+  title: string
+  make: string
+  model: string
+  year: number
+  price: number
+  km: number
+  fuel: "Petrol" | "Diesel" | "CNG" | "Electric"
+  body: "Hatchback" | "Sedan" | "SUV" | "MPV"
+  transmission: "Manual" | "Automatic"
+  location: string
+  images?: string[]
+  condition: "New" | "Used"
+  approved?: boolean // add approved flag for moderation
 }
 
-export async function GET(req: NextRequest) {
-  const db = await getDb()
-  const qp = req.nextUrl.searchParams
-  const q = qp.get("q") || ""
-  const status = qp.get("status") || ""
-  const type = qp.get("type") || ""
-  const minPrice = qp.get("minPrice")
-  const maxPrice = qp.get("maxPrice")
-  const sort = qp.get("sort") === "oldest" ? { createdAt: 1 as const } : { createdAt: -1 as const }
-  const limit = Number(qp.get("limit") || 24)
-  const page = Number(qp.get("page") || 1)
-  const skip = (page - 1) * limit
-
-  const filter: any = {}
-  if (q) filter.$or = [{ name: { $regex: q, $options: "i" } }, { description: { $regex: q, $options: "i" } }]
-  if (status) {
-    filter.$or = [...(filter.$or || []), { status }, { availability: status === "available" ? "in-stock" : status }]
-  }
-  if (type) filter.type = type
-  if (minPrice || maxPrice) {
-    filter.price = {}
-    if (minPrice) filter.price.$gte = Number(minPrice)
-    if (maxPrice) filter.price.$lte = Number(maxPrice)
-  }
-
-  const col = db.collection("cars")
-  const [raw, total] = await Promise.all([
-    col.find(filter).sort(sort).skip(skip).limit(limit).toArray(),
-    col.countDocuments(filter),
-  ])
-
-  const items = raw.map(normalize)
-
-  return NextResponse.json({ items, total, page, limit })
+function genId(): string {
+  return `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export async function POST(req: NextRequest) {
+function toPublic(car: CarDoc) {
+  // Strip _id; keep string id used by the app
+  const { _id, ...rest } = car
+  return rest
+}
+
+async function ensureCollection() {
   const db = await getDb()
-  let body: Partial<Car> = {}
+  return db.collection<CarDoc>("cars")
+}
+
+export async function GET(req: Request) {
   try {
-    body = (await req.json()) as Partial<Car>
-  } catch (e) {
-    return NextResponse.json("Invalid JSON body", { status: 400 })
+    const col = await ensureCollection()
+
+    const { searchParams } = new URL(req.url)
+    const q = (searchParams.get("q") ?? "").toLowerCase()
+    const make = (searchParams.get("make") ?? "").toLowerCase()
+    const model = (searchParams.get("model") ?? "").toLowerCase()
+    const fuel = searchParams.get("fuel") ?? ""
+    const body = searchParams.get("body") ?? ""
+    const minPrice = Number(searchParams.get("minPrice") ?? 0)
+    const maxPrice = Number(searchParams.get("maxPrice") ?? Number.MAX_SAFE_INTEGER)
+    const maxKm = Number(searchParams.get("maxKm") ?? Number.MAX_SAFE_INTEGER)
+    const condition = (searchParams.get("condition") ?? "").toLowerCase()
+
+    const filter: any = { approved: true } // only show approved listings publicly
+
+    if (q) {
+      filter.$or = [
+        { title: { $regex: q, $options: "i" } },
+        { make: { $regex: q, $options: "i" } },
+        { model: { $regex: q, $options: "i" } },
+        { location: { $regex: q, $options: "i" } },
+      ]
+    }
+    if (make) filter.make = { $regex: make, $options: "i" }
+    if (model) filter.model = { $regex: model, $options: "i" }
+    if (fuel) filter.fuel = fuel
+    if (body) filter.body = body
+    if (condition) filter.condition = condition === "new" ? "New" : "Used"
+
+    filter.price = { $gte: minPrice, $lte: maxPrice }
+    filter.km = { $lte: maxKm }
+
+    const docs = await col.find(filter).sort({ _id: -1 }).toArray()
+    return NextResponse.json({ cars: docs.map(toPublic) })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || "Failed to fetch cars" }, { status: 500 })
   }
+}
 
-  const name = String(body.name || "").trim()
-  const description = String(body.description || "").trim()
-  const priceNum = Number(body.price)
+export async function POST(req: Request) {
+  try {
+    const body = (await req.json()) as Partial<CarRecord>
 
-  if (!name) return NextResponse.json("Missing required field: name", { status: 400 })
-  if (!description) return NextResponse.json("Missing required field: description", { status: 400 })
-  if (!Number.isFinite(priceNum)) return NextResponse.json("Invalid price", { status: 400 })
-
-  // Process images - handle both array and single URL cases
-  const images = Array.isArray(body.images) 
-    ? body.images.filter((img: any) => img && (typeof img === 'string' ? img : img.url))
-    : [];
+    const required = [
+      "title",
+      "make",
+      "model",
+      "year",
+      "price",
+      "km",
+      "fuel",
+      "body",
+      "transmission",
+      "location",
+      "condition",
+    ] as const
     
-  // Extract image URLs if they're objects with a url property
-  const imageUrls = images.map((img: any) => typeof img === 'string' ? img : img.url);
-  
-  // Use the first image URL if available, otherwise default to empty string
-  const imageUrl = imageUrls[0] || '';
+    for (const key of required) {
+      if (body[key] === undefined || body[key] === null || body[key] === "") {
+        return NextResponse.json({ error: `Missing field: ${key}` }, { status: 400 })
+      }
+    }
 
-  const doc: any = {
-    name,
-    description,
-    price: priceNum,
-    status: (body.status || "available") as Car["status"],
-    type: (body.type || "new") as Car["type"],
-    imageUrl,
-    availability: (body.status || "available") === "available" ? "in-stock" : "sold",
-    images: imageUrls, // Save the array of image URLs
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    if (typeof body.year !== "number" || typeof body.price !== "number" || typeof body.km !== "number") {
+      return NextResponse.json({ error: "year, price, and km must be numbers" }, { status: 400 })
+    }
+
+    const doc: CarDoc = {
+      id: genId(),
+      title: body.title!,
+      make: body.make!,
+      model: body.model!,
+      year: body.year!,
+      price: body.price!,
+      km: body.km!,
+      fuel: body.fuel as CarDoc["fuel"],
+      body: body.body as CarDoc["body"],
+      transmission: body.transmission as CarDoc["transmission"],
+      location: body.location!,
+      condition: (body.condition as CarDoc["condition"]) ?? "Used",
+      images:
+        Array.isArray(body.images) && body.images.length > 0
+          ? body.images.filter((s): s is string => typeof s === "string")
+          : undefined,
+      approved: body.approved ?? true, // allow admin-created cars to be instantly approved; default true
+    }
+
+    const col = await ensureCollection()
+    await col.insertOne(doc)
+
+    return NextResponse.json(toPublic(doc), { status: 201 })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || "Invalid request" }, { status: 400 })
   }
-  
-  console.log('Saving car with images:', {
-    receivedImages: body.images,
-    processedImages: imageUrls,
-    finalDoc: doc
-  });
-  const res = await db.collection("cars").insertOne(doc)
-  return NextResponse.json({ _id: res.insertedId, ...doc })
 }
